@@ -144,7 +144,7 @@ class menu:
 def language(cookie):
     try:
         with requests.Session() as xyz:
-            req = xyz.get('https://mbasic.facebook.com/language/',cookies=cookie)
+            req = xyz.get('https://mbasic.facebook.com/language/',cookies={'cookie':cookie})
             pra = bs(req.content,'html.parser')
             for x in pra.find_all('form',{'method':'post'}):
                 if 'Bahasa Indonesia' in str(x):
@@ -153,7 +153,7 @@ def language(cookie):
                         "jazoest" : re.search('name="jazoest" value="(.*?)"', str(req.text)).group(1),
                         "submit"  : "Bahasa Indonesia"}
                     url = 'https://mbasic.facebook.com' + x['action']
-                    exec = xyz.post(url,data=bahasa,cookies={'cokkie':cookie})
+                    exec = xyz.post(url,data=bahasa,cookies={'cookie':cookie})
     except Exception as e:pass
 
 
