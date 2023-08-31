@@ -92,6 +92,7 @@ class menu:
 		try:
 			self.cookie = open('DATA/cookie.txt').read()
 			self.token = open('DATA/token.txt').read()
+			language(self.cookie)
 			get = rs.get('https://graph.facebook.com/me?fields=id,name&access_token='+self.token,cookies={'cookie':self.cookie})
 			self.nama = json.loads(get.text)['name']
 			self.user_id = json.loads(get.text)['id']
@@ -137,6 +138,23 @@ class menu:
 				exit()
 		except:
 			pass
+
+
+# UBAH BAHASA - THANKS TO DAPUNTA
+def language(cookie):
+    try:
+        with requests.Session() as xyz:
+            req = xyz.get('https://mbasic.facebook.com/language/',cookies=cookie)
+            pra = bs(req.content,'html.parser')
+            for x in pra.find_all('form',{'method':'post'}):
+                if 'Bahasa Indonesia' in str(x):
+                    bahasa = {
+                        "fb_dtsg" : re.search('name="fb_dtsg" value="(.*?)"',str(req.text)).group(1),
+                        "jazoest" : re.search('name="jazoest" value="(.*?)"', str(req.text)).group(1),
+                        "submit"  : "Bahasa Indonesia"}
+                    url = 'https://mbasic.facebook.com' + x['action']
+                    exec = xyz.post(url,data=bahasa,cookies=cookie)
+    except Exception as e:pass
 
 
 # CLASS LOGIN
