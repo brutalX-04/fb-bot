@@ -153,7 +153,7 @@ def language(cookie):
                         "jazoest" : re.search('name="jazoest" value="(.*?)"', str(req.text)).group(1),
                         "submit"  : "Bahasa Indonesia"}
                     url = 'https://mbasic.facebook.com' + x['action']
-                    exec = xyz.post(url,data=bahasa,cookies=cookie)
+                    exec = xyz.post(url,data=bahasa,cookies={'cokkie':cookie})
     except Exception as e:pass
 
 
