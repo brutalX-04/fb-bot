@@ -19,6 +19,7 @@ h  = '\x1b[0;92m' 	# HIJAU
 # CALLING
 rs = requests.Session()
 loop = 1
+fail = 0
 
 if "linux" in sys.platform.lower():
 	try:
@@ -37,6 +38,7 @@ else:
 
 
 # USER AGENT
+'''
 try:
 	os.system(clear)
 	ua = open('DATA/user-agent.txt','r').read()
@@ -69,6 +71,7 @@ except:
 		os_ver = '"11.0.0"'
 		sec_ch = '"Not:A-Brand";v="99", "Chromium";v="98"'
 		sec_full = '"Not.A/Brand";v="8.0.0.0", "Chromium";v="98.0.4758.101", "Google Chrome";v="98.0.4758.101"'
+'''
 
 
 # CLASS BANNER
@@ -92,10 +95,10 @@ class menu:
 		try:
 			self.cookie = open('DATA/cookie.txt').read()
 			self.token = open('DATA/token.txt').read()
-			language(self.cookie)
 			get = rs.get('https://graph.facebook.com/me?fields=id,name&access_token='+self.token,cookies={'cookie':self.cookie})
 			self.nama = json.loads(get.text)['name']
 			self.user_id = json.loads(get.text)['id']
+			language(self.cookie)
 		except:
 			os.system(clear)
 			print('%s Check Login Failled%s, Login Ulang'%(m,p))
@@ -104,7 +107,7 @@ class menu:
 				print('\r - Login Ulang Dalam %s Detik   '%(dtk), end='')
 				time.sleep(1)
 				dtk-=1
-			login.login(self)
+			login()
 			
 
 	def menu(self):
@@ -120,21 +123,20 @@ class menu:
 			print('3. Bot Pesan  [ %sMbasic%s ]\n'%(h,p))
 			pilih = input(' - Pilih : ')
 			if pilih in ['01','1']:
-				share.share(self)
-				exit()
+				share.share(self.cookie, self.token)
 
 			elif pilih in ['02','2']:
 				print('*' * 25)
-				self.delay = input('Input Delay Comment : ')
-				self.text_comment = input('Input Text comment : ')
-				comment.home(self, 'https://mbasic.facebook.com/home.php?')
+				delay = input('Input Delay Comment : ')
+				text_comment = input('Input Text comment : ')
+				comment.home('https://mbasic.facebook.com/home.php?', self.cookie, delay, text_comment)
 				exit()
 
 			elif pilih in ['03','3']:
 				print('*' * 25)
-				self.delay = input('Input Delay Pesan : ')
-				self.text_pesan = input('Input Text Pesan : ')
-				pesan.table(self, 'https://mbasic.facebook.com/messages/?')
+				delay = input('Input Delay Pesan : ')
+				text_pesan = input('Input Text Pesan : ')
+				pesan.table('https://mbasic.facebook.com/messages/?', self.cookie, delay, text_pesan)
 				exit()
 		except:
 			pass
@@ -186,24 +188,23 @@ class login:
 
 # CLASS BOT SHARE
 class share:
-	def __init__(self):
-		pass
 
-	def share(self):
+	def share(cookie, token):
 		global loop
 		try:
 			print('*' * 25)
 			jumlah = input('Input Jumlah Share : ')
 			url = input('Input Url : ')
-			link = f'https://graph.facebook.com/v17.0/me/feed?link={url}&published=0&access_token={self.token}'
 			awal = time.time()
 			for i in range(int(jumlah)):
-				post = rs.post(link, cookies={'cookie': self.cookie}).text
+				post = rs.post(f'https://graph.facebook.com/v17.0/me/feed?link={url}&published=0&access_token={token}', cookies={'cookie': cookie}).text
 				if 'Kami membatasi' in post:
 					print(' - Share %sFailled%s : Account Limit'%(m,p))
 				elif 'spam' in post:
 					print(' - Share %sFailled%s : Account Limit'%(m,p))
-				elif 'id' in post:
+				elif 'URL can\'t be used' in post:
+					print(' - Share %sFailled%s : Url Not Support'%(m,p))
+				elif '"id"' in post:
 					print(' - Succes Share Post %s%s%s X \n   Response : %s'%(h,loop,p,post))
 					loop+=1
 
@@ -218,13 +219,11 @@ class share:
 
 # CLASS BOT KOMEN
 class comment:
-	def __init__(self):
-		pass
 
-	def home(self, url):
+	def home(url, cookie, delay, text_comment):
 		try:
 			awal = time.time()
-			get = bs(rs.get(url, cookies={'cookie': self.cookie}).text, 'html.parser')
+			get = bs(rs.get(url, cookies={'cookie': cookie}).text, 'html.parser')
 			clas = re.search('div id="m-top-of-feed"></div><div class=".. .. .."><div class="(.*?)" data-ft=', str(get)).group(1)
 			all_story = get.find_all('div', class_='%s'%(clas))
 			for story in all_story:
@@ -235,9 +234,9 @@ class comment:
 				else:
 					url = 'https://mbasic.facebook.com'+url
 
-				comment.comment(self, url)
-				io = int(self.delay)
-				for i in range(int(self.delay)):
+				comment.comment(url, cookie, text_comment)
+				io = int(delay)
+				for i in range(int(delay)):
 					print('\r - Lanjut Dalam %s Detik  '%(io), end='')
 					io-=1
 					time.sleep(1)
@@ -250,7 +249,7 @@ class comment:
 						pass
 					else:
 						url = 'https://mbasic.facebook.com'+url
-					comment.home(self, url)
+					comment.home(url, cookie, delay, text_comment)
 				except:
 					print('\n - Failled Get More Post')
 			else:
@@ -263,45 +262,20 @@ class comment:
 
 		except Exception as e:
 			print(e)
-			exit()
 
-	def comment(self, url):
-		global loop
+	def comment(url, cookie, text_comment):
+		global loop, fail
 		try:
-			get = bs(rs.get(url, cookies={'cookie': self.cookie}).text, 'html.parser')
+			get = bs(rs.get(url, cookies={'cookie': cookie}).text, 'html.parser')
 			form = get.find('form', {'method': 'post'})
-			headers = {
-			    'authority': 'mbasic.facebook.com',
-			    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-			    'accept-language': 'en-US,en;q=0.9,id;q=0.8',
-			    'cache-control': 'no-cache',
-			    'content-type': 'application/x-www-form-urlencoded',
-			    'dpr': '1',
-			    'origin': 'https://mbasic.facebook.com',
-			    'pragma': 'no-cache',
-			    'referer': url,
-			    'sec-ch-prefers-color-scheme': 'light',
-			    'sec-ch-ua': sec_ch,
-			    'sec-ch-ua-full-version-list': sec_full,
-			    'sec-ch-ua-mobile': '?1',
-			    'sec-ch-ua-model': '""',
-			    'sec-ch-ua-platform': '"Android"',
-			    'sec-ch-ua-platform-version': os_ver,
-			    'sec-fetch-dest': 'document',
-			    'sec-fetch-mode': 'navigate',
-			    'sec-fetch-site': 'same-origin',
-			    'sec-fetch-user': '?1',
-			    'upgrade-insecure-requests': '1',
-			    'user-agent': ua
-			}
 			data = {
 				'fb_dtsg':	re.search('name="fb_dtsg" type="hidden" value="(.*?)"', str(form)).group(1),
 				'jazoest':	re.search('name="jazoest" type="hidden" value="(.*?)"', str(form)).group(1),
-				'comment_text':	self.text_comment
+				'comment_text':	text_comment
 			}
 			nama = get.find('title').text
 			try:
-				nama = nama.split(' ')[0]
+				nama = nama.split('|')[0]
 			except:
 				pass
 			url = form.get('action')
@@ -310,26 +284,26 @@ class comment:
 			else:
 				url = 'https://mbasic.facebook.com'+url
 			
-			post = rs.post(url, headers=headers, data= data, cookies={'cookie': self.cookie})
+			post = rs.post(url, data= data, cookies={'cookie': cookie})
 			if '<Response [200]>' in str(post):
-				print('\r - [ %s ] Succes Comment In Post : %s%s%s'%(loop,h,nama,p))
+				print('\r - [ %s%s%s/%s%s%s ] Succes Comment In Post : %s%s%s'%(h,loop,p,m,fail,p,h,nama,p))
 				loop+=1
 			else:
 				print('\r - Failled Comment In Post : %s%s%s'%(h,nama,p))
+				fail+=1
 
 		except Exception as e:
 			print('\r - Failled : '+str(e))
+			fail+=1
 
 
 # CLASS BOT PESAN
 class pesan:
-	def __init__(self):
-		pass
 
-	def table(self, url):
+	def table(url, cookie, delay, text_pesan):
 		try:
 			awal = time.time()
-			get = bs(rs.get(url, cookies={'cookie': self.cookie}).text, 'html.parser')
+			get = bs(rs.get(url, cookies={'cookie': cookie}).text, 'html.parser')
 			clas = re.search('Cari pesan</a></div><div><div><table class="(.*?)"><tr>', str(get)).group(1)
 			all_table = get.find_all('table', class_='%s'%(clas))
 			for table in all_table:
@@ -338,9 +312,9 @@ class pesan:
 					pass
 				else:
 					url = 'https://mbasic.facebook.com'+url
-				pesan.pesan(self, url)
-				io = int(self.delay)
-				for i in range(int(self.delay)):
+				pesan.pesan(url, cookie, text_pesan)
+				io = int(delay)
+				for i in range(int(delay)):
 					print('\r - Lanjut Dalam %s Detik  '%(io), end='')
 					io-=1
 					time.sleep(1)
@@ -353,17 +327,17 @@ class pesan:
 		except Exception as e:
 			print(e)
 
-	def pesan(self, url):
+	def pesan(url, cookie, text_pesan):
+		global loop, fail
 		try:
-			global loop
-			get = bs(rs.get(url, cookies={'cookie': self.cookie}).text, 'html.parser')
+			get = bs(rs.get(url, cookies={'cookie': cookie}).text, 'html.parser')
 			form = get.find('form', {'method': 'post'})
-			open('pesan.txt', 'w', encoding='utf-8').write(str(form))
+			#open('pesan.txt', 'w', encoding='utf-8').write(str(form))
 			ids = re.search('name="ids(.*?)" type="hidden" value="(.*?)"', str(form)).group(2)
 			data = {
 			    'fb_dtsg':	re.search('name="fb_dtsg" type="hidden" value="(.*?)"', str(form)).group(1),
 				'jazoest':	re.search('name="jazoest" type="hidden" value="(.*?)"', str(form)).group(1),
-			    'body': self.text_pesan,
+			    'body': text_pesan,
 			    'send': 'Kirim',
 			    'tids': re.search('name="tids" type="hidden" value="(.*?)"', str(form)).group(1),
 			    'wwwupp': 'C3',
@@ -381,15 +355,17 @@ class pesan:
 			else:
 				url = 'https://mbasic.facebook.com'+url
 
-			post = rs.post(url, data= data, cookies={'cookie': self.cookie})
+			post = rs.post(url, data= data, cookies={'cookie': cookie})
 			if '<Response [200]>' in str(post):
-				print('\r - [ %s ] Succes Comment In Post : %s%s%s'%(loop,h,nama,p))
+				print('\r - [ %s%s%s/%s%s%s ] Succes Send Message To : %s%s%s'%(h,loop,p,m,fail,p,h,nama,p))
 				loop+=1
 			else:
-				print('\r - Failled Comment In Post : %s%s%s'%(h,nama,p))
+				print('\r - Failled Send Message : %s%s%s'%(h,nama,p))
+				fail+=1
 
 		except Exception as e:
-			print(e)
+			print(' - Failled : %s'%(str(e)))
+			fail+=1
 
 
 
