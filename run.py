@@ -190,7 +190,7 @@ class login:
 class share:
 
 	def share(cookie, token):
-		global loop
+		global loop, fail
 		try:
 			print('*' * 25)
 			jumlah = input('Input Jumlah Share : ')
@@ -200,13 +200,21 @@ class share:
 				post = rs.post(f'https://graph.facebook.com/v17.0/me/feed?link={url}&published=0&access_token={token}', cookies={'cookie': cookie}).text
 				if 'Kami membatasi' in post:
 					print(' - Share %sFailled%s : Account Limit'%(m,p))
+					fail+=1
 				elif 'spam' in post:
 					print(' - Share %sFailled%s : Account Limit'%(m,p))
+					fail+=1
 				elif 'URL can\'t be used' in post:
 					print(' - Share %sFailled%s : Url Not Support'%(m,p))
+					fail+=1
+				elif 'not supported' in post:
+					print(' - Share %sFailled%s : Url Not Support'%(m,p))
+					fail+=1
 				elif '"id"' in post:
-					print(' - Succes Share Post %s%s%s X \n   Response : %s'%(h,loop,p,post))
+					print(' [%s%s%s/%s%s%s] Succes Share Post  \n   Response : %s'%(h,loop,p,m,fail,p,post))
 					loop+=1
+				else:
+					fail+=1
 
 			akhir = time.time()
 			total = akhir - awal
